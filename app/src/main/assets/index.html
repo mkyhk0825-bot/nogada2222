@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>개썅 노가다</title>
+    <style>
+        *{box-sizing:border-box;}
+        body{
+        margin:0;
+        font-family:'Pretendard',sans-serif;
+        background:linear-gradient(135deg,#141e30,#243b55);
+        display:flex;
+        justify-content:center;
+        color:white;
+        }
+        .screen{
+        width:100%;
+        max-width:420px;
+        min-height:100vh;
+        display:none;
+        position:relative;
+        padding:20px;
+        padding-bottom:90px;
+        }
+        .game-screen{
+        background-size:cover;
+        background-position:center;
+        }
+        .card{
+        background:rgba(255,255,255,0.08);
+        backdrop-filter:blur(12px);
+        border-radius:20px;
+        padding:15px;
+        margin-bottom:15px;
+        box-shadow:0 8px 25px rgba(0,0,0,0.3);
+        }
+        .shop-items{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:14px;
+        margin-top:15px;
+        }
+        .item{
+        background:rgba(255,255,255,0.08);
+        backdrop-filter:blur(8px);
+        padding:12px;
+        border-radius:18px;
+        transition:0.2s;
+        }
+        .item:hover{
+        transform:scale(1.05);
+        }
+        .item img{
+        width:70px;
+        height:70px;
+        object-fit:contain;
+        }
+        button{
+        padding:10px;
+        border:none;
+        border-radius:14px;
+        background:linear-gradient(45deg,#00c6ff,#0072ff);
+        color:white;
+        margin-top:8px;
+        width:100%;
+        cursor:pointer;
+        font-weight:bold;
+        transition:0.2s;
+        }
+        button:hover{
+        opacity:0.85;
+        transform:translateY(-2px);
+        }
+        input{
+        width:100%;
+        padding:10px;
+        margin-top:8px;
+        border-radius:10px;
+        border:none;
+        background:rgba(255,255,255,0.1);
+        color:white;
+        }
+        .bottom-nav{
+        position:fixed;
+        bottom:0;
+        width:100%;
+        max-width:420px;
+        display:none;
+        background:rgba(0,0,0,0.6);
+        backdrop-filter:blur(12px);
+        display:flex;
+        }
+        .nav-btn{
+        flex:1;
+        text-align:center;
+        padding:14px 0;
+        font-size:14px;
+        cursor:pointer;
+        transition:0.2s;
+        }
+        .nav-btn:hover{
+        background:rgba(255,255,255,0.1);
+        }
+        #furnitureArea,#petArea{
+        position:absolute;
+        width:100%;
+        text-align:center;
+        }
+        #petArea{
+        bottom:170px;
+        }
+        #furnitureArea{
+        bottom:100px;
+        }
+        #furnitureArea img, #petArea img{
+        width:50px;
+        margin:6px;
+        animation:float 3s ease-in-out infinite;
+        }
+        @keyframes float{
+        0%{transform:translateY(0);}
+        50%{transform:translateY(-5px);}
+        100%{transform:translateY(0);}
+        }
+        /* 미니게임 박스 */
+        .mini-box{
+        width:50px;
+        height:50px;
+        display:inline-block;
+        margin:6px;
+        border-radius:8px;
+        cursor:pointer;
+        }
+        .delivery{
+        background:#8d6e63;
+        }
+        .cleaning{
+        background:#777;
+        }
+          #infoBox {
+                    position: relative;
+                    transition: all 0.3s ease;
+                    overflow: hidden;
+                }
+
+                #infoBox.closed {
+                    height: 40px;
+                }
+
+                #toggleInfoBtn {
+                    position: absolute;
+                    right: 10px;
+                    top: 10px;
+                    background: rgba(0,0,0,0.6);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    cursor: pointer;
+                }
+
+    </style>
+</head>
+<body>
+<!-- 시작 화면 -->
+<div id="startScreen" class="screen" style="display:block;">
+    <div class="card">
+        <h2>🏠 인생 시작</h2>
+        <input type="text" id="nameInput" placeholder="닉네임">
+        <label>출근</label>
+        <input type="time" id="startTime" value="09:00">
+        <label>퇴근</label>
+        <input type="time" id="endTime" value="18:00">
+        <button onclick="startGame()">시작</button>
+    </div>
+</div>
+<div id="gameScreen" class="screen game-screen">
+
+    <div id="infoBox" class="card">
+        <button id="toggleInfoBtn">▲</button>
+
+        <p id="workStatusText">⏰ 상태 확인중...</p>
+        <button onclick="startOvertime()">🔥 연장근무</button>
+        <h3 id="playerName"></h3>
+        <p id="moneyText"></p>
+        <p id="levelText"></p>
+        <p id="rebirthText"></p>
+        <p id="workTimeText"></p>
+        <p>💸 자동수익 보너스: <span id="autoBonusText">0</span>%</p>
+        <p>🐶 펫 보너스 : <span id="petBonusText">0</span>%</p>
+        <p>❤️ <span id="affectionText"></span> | 🗑 <span id="trashText"></span></p>
+
+        <button onclick="cleanTrash()">🧹 쓰레기 청소 (-70,000원)</button>
+        <button onclick="giveTreat()">🍖 간식 주기 (-8,000원)</button>
+    </div>
+
+    <div id="petArea"></div>
+    <div id="furnitureArea"></div>
+
+</div>
+
+<!-- 상점 -->
+<div id="shopScreen" class="screen">
+    <div class="card">
+        <h3>상점</h3>
+        <div class="shop-items">
+            <div class="item">
+                <img src="./images/bed.png">
+                <p>침대 - 300,000원</p> <br>자동수익 +5%</p>
+                <button onclick="buyFurniture('bed.png',300000,5)">구매</button>
+            </div>
+            <div class="item">
+                <img src="./images/sofa.png">
+                <p>소파 - 500,000원</p> <br>자동수익 +10%</p>
+                <button onclick="buyFurniture('sofa.png',500000,10)">구매</button>
+            </div>
+            <div class="item">
+                <img src="./images/computer.png">
+                <p>컴퓨터 - 1,000,000원</p> <br>자동수익 +15%</p>
+                <button onclick="buyFurniture('computer.png',1000000,15)">구매</button>
+            </div>
+            <div class="item">
+                <img src="./images/dog.png">
+                <p>강아지 - 700,000원<br>자동수익 +30%</p>
+                <button onclick="buyPet('dog.png',700000,20)">구매</button>
+            </div>
+            <div class="item">
+                <img src="./images/cat.png">
+                <p>고양이 - 700,000원<br>자동수익 +30%</p>
+                <button onclick="buyPet('cat.png',700000,15)">구매</button>
+            </div>
+            <div class="item">
+                <p><b>🏠 집 업그레이드</b></p>
+                <p id="upgradeCostText"></p>
+                <button onclick="upgradeHouse()">업그레이드</button>
+            </div>
+            <div class="item">
+                <p><b>🔁 환생 (Lv.50 필요)</b></p>
+                <button onclick="rebirth()">환생하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 알바 -->
+<div id="parttimeScreen" class="screen">
+    <div class="card">
+        <h3>💼 알바 선택</h3>
+        <button onclick="startDeliveryGame()">📦 택배 알바</button>
+        <button onclick="startCleaningGame()">🧹 청소 알바</button>
+        <div id="miniGameArea" style="margin-top:15px;"></div>
+    </div>
+</div>
+
+<!-- 하단 네비 -->
+<div class="bottom-nav" id="navBar">
+    <div class="nav-btn" onclick="goGame()">🏠 홈</div>
+    <div class="nav-btn" onclick="openShop()">🛒 상점</div>
+    <div class="nav-btn" onclick="openPartTime()">💼 알바</div>
+    <div class="nav-btn" onclick="resetGame()" style="background:#b71c1c;">🗑 초기화</div>
+</div>
+
+<script>
+    let money=100000;
+    let houseLevel=1;
+    let rebirthCount=0;
+    let ownedPets=[];
+    let ownedFurniture=[];
+    let affection=100;
+    let treatCost = 8000;
+    let trash=0;
+    let workStartHour = 9;
+    let workEndHour = 18;
+    let overtimeEndHour = null; // 연장근무용 (지금 안 써도 미리 둠)
+    let incomeInterval;
+
+    let petBonusPercent = 0;
+    ownedPets.forEach(p => petBonusPercent += p.bonus);
+
+    // 🔥 호감도가 0이면 보너스 없음
+    if(affection <= 0){
+        petBonusPercent = 0;
+    }
+
+    function buyPet(img, price, bonus){
+        if(money < price) return alert("돈 부족");
+
+        if(!ownedPets.find(p => p.name === img)){
+            money -= price;
+            let newPet = {name: img, bonus: bonus};
+            ownedPets.push(newPet);
+            renderPets();
+            updateUI();
+            saveGame();
+
+            // 🔥 호감도가 0이면, 알바 3번 후 도망
+            if(affection <= 0){
+                newPet.escapesIn = 3;  // 알바 3번 후 도망
+            }
+        }
+    }
+
+    function checkPetEscape(){
+        ownedPets.forEach((p, idx) => {
+            if(p.escapesIn !== undefined){
+                p.escapesIn--;
+                if(p.escapesIn <= 0){
+                    alert("😢 " + p.name + "가 도망갔습니다!");
+                    ownedPets.splice(idx, 1);
+                }
+            }
+        });
+    }
+
+
+    function startIncomeSystem(){
+    if(incomeInterval) clearInterval(incomeInterval);
+
+    incomeInterval=setInterval(()=>{
+
+    let now = new Date();
+    let currentTime = now.getHours() * 60 + now.getMinutes();
+
+    let startTime = workStartHour * 60 + workStartMinute;
+    let endTime = workEndHour * 60 + workEndMinute;
+
+    let isWorkingTime = false;
+    let isOvertime = false;
+
+    // 🔹 기본 근무시간 체크
+    if(startTime < endTime){
+        if(currentTime >= startTime && currentTime < endTime){
+            isWorkingTime = true;
+        }
+    }else{
+        if(currentTime >= startTime || currentTime < endTime){
+            isWorkingTime = true;
+        }
+    }
+
+    // 🔥 연장근무 체크 (가장 중요)
+    if(overtimeEndHour !== null){
+        if(currentTime < overtimeEndHour){
+            isWorkingTime = true;
+            isOvertime = true;
+        }else{
+            overtimeEndHour = null;
+        }
+    }
+
+    // 🔹 상태 표시
+    if(isOvertime){
+        workStatusText.innerText = "🔥 연장근무중";
+    }else if(isWorkingTime){
+        workStatusText.innerText = "💼 근무중";
+    }else{
+        workStatusText.innerText = "🌙 퇴근";
+    }
+
+    // ✅ 근무중일 때만 수익 계산
+    if(isWorkingTime){
+
+    let base = 10500;
+
+    // 환생 보너스
+    let rebirthMultiplier = 1 + (rebirthCount * 0.2);
+
+    // 🔥 전체 보너스 계산
+    let totalBonus = 0;
+
+    // 펫 보너스
+    ownedPets.forEach(p => {
+        if(affection > 0) totalBonus += p.bonus;
+    });
+
+    // 가구 보너스
+    ownedFurniture.forEach(f => {
+        totalBonus += (f.bonus || 0);
+    });
+
+    // 🔥 환생 보너스 추가
+    let rebirthBonusPercent = rebirthCount * 20;
+    totalBonus += rebirthBonusPercent;
+
+    // UI 표시
+    autoBonusText.innerText = totalBonus;
+    petBonusText.innerText = totalBonus;
+
+    // 🔥 최종 수익 계산
+    let total = base;
+    total = Math.floor(total * (1 + totalBonus / 100));
+
+    money += total;
+
+    }
+
+    updateUI();
+    saveGame();
+
+    },1000);
+    }
+    const gameScreen = document.getElementById("gameScreen");
+    function updateHouse(){
+    let stage=Math.ceil(houseLevel/10);
+    if(stage>5) stage=5;
+    gameScreen.style.backgroundImage="url('./images/house_lv"+stage+".png')";
+    }
+
+    function upgradeHouse(){
+    let cost=houseLevel*500000;
+    if(money<cost) return alert("돈 부족");
+    money-=cost;
+    houseLevel++;
+    updateHouse();
+    updateUI();
+    saveGame();
+    }
+
+    function buyFurniture(img, price, bonus){
+        if(money < price) return alert("돈 부족");
+        if(!ownedFurniture.find(f => f.name === img)){
+            money -= price;
+            ownedFurniture.push({name: img, bonus: bonus}); // bonus 추가
+            renderFurniture();
+            updateUI();
+            saveGame();
+        }
+    }
+
+    function renderFurniture(){
+    furnitureArea.innerHTML="";
+    ownedFurniture.forEach(f=>{
+    let img=document.createElement("img");
+    img.src="./images/"+f;
+    furnitureArea.appendChild(img);
+    });
+    }
+
+    function buyPet(img,price,bonus){
+    if(money<price) return alert("돈 부족");
+    if(!ownedPets.find(p=>p.name===img)){
+    money-=price;
+    ownedPets.push({name:img,bonus:bonus});
+    renderPets();
+    updateUI();
+    saveGame();
+    }
+    }
+
+    function renderPets(){
+    petArea.innerHTML="";
+    ownedPets.forEach(p=>{
+    let img=document.createElement("img");
+    img.src="./images/"+p.name;
+    petArea.appendChild(img);
+    });
+    }
+    /* 알바 화면 */
+    function openPartTime(){
+    hideAll();
+    parttimeScreen.style.display="block";
+    }
+
+    /* 택배 알바 */
+    function startDeliveryGame(){
+    miniGameArea.innerHTML="";
+    let count=0;
+    for(let i=0;i<10;i++){
+    let box=document.createElement("div");
+    box.className="mini-box delivery";
+    box.onclick=()=>{
+    box.remove();
+    count++;
+
+    if(count>=10){
+    let reward=Math.floor(Math.random()*30000)+70000;
+    money+=reward;
+    trash++;
+    if(affection > 0){
+        affection--;
+    }
+    checkPetEscape();
+    updateUI();
+    saveGame();
+    miniGameArea.innerHTML="<p>🎉 "+reward.toLocaleString()+"원 획득!<br>🗑 쓰레기 +1</p>";
+    }
+    };
+    miniGameArea.appendChild(box);
+    }
+    }
+
+    /* 청소 알바 */
+    function startCleaningGame(){
+    miniGameArea.innerHTML="";
+    let count=0;
+    for(let i=0;i<8;i++){
+    let t=document.createElement("div");
+    t.className="mini-box cleaning";
+    t.onclick=()=>{
+    t.remove();
+    count++;
+    if(count>=8){
+    let reward=Math.floor(Math.random()*30000)+70000;
+    money+=reward;
+    trash++;
+    if(affection > 0){
+        affection--;
+    }
+    checkPetEscape();
+    updateUI();
+    saveGame();
+    miniGameArea.innerHTML="<p>🧹 "+reward.toLocaleString()+"원 획득!<br>🗑 쓰레기 +1</p>";
+    }
+    };
+    miniGameArea.appendChild(t);
+    }
+    }
+
+    function updateUI(){
+
+        moneyText.innerText="💰 "+money.toLocaleString();
+        levelText.innerText="🏠 Lv."+houseLevel;
+        rebirthText.innerText="🔁 환생:"+rebirthCount;
+        workTimeText.innerText=
+    "⏰ "+String(workStartHour).padStart(2,"0")+":"+
+    String(workStartMinute).padStart(2,"0")+
+    " ~ "+
+    String(workEndHour).padStart(2,"0")+":"+
+    String(workEndMinute).padStart(2,"0");
+
+        // 🔥 전체 보너스 계산
+        let totalBonus = 0;
+
+        // 펫 보너스
+        ownedPets.forEach(p=>{
+            if(affection > 0) totalBonus += p.bonus;
+        });
+
+        // 가구 보너스
+        ownedFurniture.forEach(f=>{
+            totalBonus += (f.bonus || 0);
+        });
+
+        // 🔥 환생 보너스
+        totalBonus += rebirthCount * 20;
+
+        autoBonusText.innerText = totalBonus;
+        petBonusText.innerText = totalBonus;
+
+        affectionText.innerText=affection;
+        trashText.innerText=trash;
+
+        let upgradeCost = houseLevel * 500000;
+        upgradeCostText.innerText = "비용: " + upgradeCost.toLocaleString() + "원";
+    }
+    function saveGame(){
+    localStorage.setItem("saveData", JSON.stringify({
+    money,
+    houseLevel,
+    rebirthCount,
+    ownedPets,
+    ownedFurniture,
+    affection,
+    trash,
+    workStartHour,
+    workStartMinute,
+    workEndHour,
+    workEndMinute,
+    playerName:playerName.innerText
+    }));
+    }
+
+    function loadGame(){
+    let data=localStorage.getItem("saveData");
+    if(!data) return false;
+    let d=JSON.parse(data);
+    money=d.money;
+    houseLevel=d.houseLevel;
+    rebirthCount=d.rebirthCount;
+    ownedPets=d.ownedPets||[];
+    ownedFurniture=d.ownedFurniture||[];
+    affection=d.affection;
+    trash=d.trash;
+    workStartHour = d.workStartHour;
+    workStartMinute = d.workStartMinute || 0;
+
+    workEndHour = d.workEndHour;
+    workEndMinute = d.workEndMinute || 0;
+    playerName.innerText=d.playerName;
+    updateHouse();
+    renderFurniture();
+    renderPets();
+    updateUI();
+    return true;
+    }
+
+    function resetGame(){
+    if(confirm("모든 데이터를 삭제할까요?")){
+    clearInterval(incomeInterval);
+    localStorage.clear();
+    location.reload();
+    }
+    }
+
+    function showStartScreen(){
+    document.querySelectorAll(".screen").forEach(s=>s.style.display="none");
+    navBar.style.display="none";
+    startScreen.style.display="block";
+    }
+
+    function openShop(){hideAll();shopScreen.style.display="block";}
+    function goGame(){hideAll();gameScreen.style.display="block";}
+
+    function hideAll(){
+    document.querySelectorAll(".screen").forEach(s=>s.style.display="none");
+    navBar.style.display="flex";
+    }
+
+    function rebirth(){
+    if(houseLevel<50) return alert("50레벨 필요");
+
+     rebirthCount++;
+
+    // 🔥 완전 초기화
+    houseLevel=1;
+    money=100000;
+    ownedPets=[];
+    ownedFurniture=[];
+    affection=100;
+    trash=0;
+
+    renderFurniture();
+    renderPets();
+
+    updateHouse();
+    updateUI();
+    saveGame();
+
+    alert("환생 완료! 🔥 영구 수익 +20%");
+    }
+
+    function giveTreat(){
+        if(ownedPets.length === 0){
+            alert("펫이 없어요!");
+            return;
+        }
+
+        if(money < treatCost){
+            alert("돈이 부족해요! (-8,000원)");
+            return;
+        }
+
+        money -= treatCost;
+        affection += 5;
+        if(affection > 100) affection = 100;
+
+        updateUI();
+        saveGame();
+
+        alert("🍖 간식 주기 완료! 호감도 +5");
+    }
+
+    function cleanTrash(){
+        if(trash <= 0){
+            alert("청소할 쓰레기가 없어!");
+            return;
+        }
+
+        let cost = 70000;
+
+        if(money < cost){
+            alert("70,000원이 부족해!");
+            return;
+        }
+
+        money -= cost;
+        trash--;
+
+        updateUI();
+        saveGame();
+
+        alert("🧹 쓰레기 1개 청소 완료!");
+    }
+
+    function startGame(){
+    let name=nameInput.value.trim();
+    if(name===""){alert("닉네임 입력해줘");return;}
+    let startParts = startTime.value.split(":");
+    let endParts = endTime.value.split(":");
+
+    workStartHour = parseInt(startParts[0]);
+    workStartMinute = parseInt(startParts[1]);
+
+    workEndHour = parseInt(endParts[0]);
+    workEndMinute = parseInt(endParts[1]);
+    playerName.innerText=name;
+    hideAll();
+    goGame();
+    updateHouse();
+    startIncomeSystem();
+    updateUI();
+    saveGame();
+    }
+
+    function renderFurniture(){
+        furnitureArea.innerHTML="";
+        ownedFurniture.forEach(f=>{
+            let img=document.createElement("img");
+            img.src="./images/"+f.name;
+            furnitureArea.appendChild(img);
+        });
+    }
+
+    window.onload=function(){
+    let hasSave=loadGame();
+    if(hasSave){
+    hideAll();
+    goGame();
+    startIncomeSystem();
+    }else{
+    showStartScreen();
+    }
+    }
+
+       const infoBox = document.getElementById("infoBox");
+        const toggleBtn = document.getElementById("toggleInfoBtn");
+
+        toggleBtn.addEventListener("click", () => {
+            infoBox.classList.toggle("closed");
+
+            if (infoBox.classList.contains("closed")) {
+                toggleBtn.innerText = "▼";
+            } else {
+                toggleBtn.innerText = "▲";
+            }
+        });
+
+function startOvertime(){
+
+    let hours = prompt("몇 시간 연장할까?");
+
+    // 취소 눌렀을 때
+    if (hours === null) {
+        return;
+    }
+
+    // 공백 제거
+    hours = hours.trim();
+
+    // 아무것도 안 썼을 때
+    if (hours === "") {
+        alert("시간을 입력해줘");
+        return;
+    }
+
+    // 숫자로 변환
+    hours = Number(hours);
+
+    // 숫자 검사
+    if (!Number.isInteger(hours) || hours <= 0) {
+        alert("올바른 시간을 입력해줘");
+        return;
+    }
+
+    let now = new Date();
+    let currentTime = now.getHours() * 60 + now.getMinutes();
+
+    overtimeEndHour = currentTime + (hours * 60);
+
+    alert("🔥 " + hours + "시간 연장근무 시작!");
+}
+
+</script>
+</body>
+</html>
